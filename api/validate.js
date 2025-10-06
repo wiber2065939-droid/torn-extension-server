@@ -9,7 +9,6 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 async function sendDiscordAlert(data) {
   const webhookUrl = process.env.DISCORD_WEBHOOK;
   
-  // Add this logging
   console.log('Discord webhook URL present:', !!webhookUrl);
   
   if (!webhookUrl) {
@@ -20,34 +19,45 @@ async function sendDiscordAlert(data) {
   try {
     console.log('Attempting to send Discord alert:', data.title);
     
+    const payload = {
+      embeds: [{
+        title: data.title,
+        color: data.color || 0xff0000,
+        fields: Object.entries(data).filter(([key]) => key !== 'title' && key !== 'color')
+          .map(([key, value]) => ({
+            name: key,
+            value: String(value),
+            inline: true
+          })),
+        timestamp: new Date().toISOString()
+      }]
+    };
+    
+    console.log('Sending payload to Discord...');
+    
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        embeds: [{
-          title: data.title,
-          color: data.color || 0xff0000,
-          fields: Object.entries(data).filter(([key]) => key !== 'title' && key !== 'color')
-            .map(([key, value]) => ({
-              name: key,
-              value: String(value),
-              inline: true
-            })),
-          timestamp: new Date().toISOString()
-        }]
-      })
+      body: JSON.stringify(payload)
     });
     
+    console.log('Discord response status:', response.status);
+    
     if (!response.ok) {
-      console.error('Discord webhook failed:', response.status, await response.text());
+      const errorText = await response.text();
+      console.error('Discord webhook failed:', response.status, errorText);
     } else {
       console.log('Discord alert sent successfully');
     }
+    
+    return response.ok;
+    
   } catch (error) {
-    console.error('Failed to send Discord alert:', error);
+    console.error('Failed to send Discord alert - Error:', error.message);
+    console.error('Full error:', error);
+    return false;
   }
 }
-
 // Main handler function
 export default function handler(req, res) {
   // Enable CORS
@@ -133,7 +143,7 @@ export default function handler(req, res) {
       console.warn(`Unauthorized access attempt: Faction ${factionId} from IP ${clientIP}`);
       
       // Send Discord alert for unauthorized attempt
-      sendDiscordAlert({
+      await sendDiscordAlert({
         title: '🚫 Unauthorized Access Attempt',
         faction: factionId,
         user: userId || 'Unknown',
