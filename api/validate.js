@@ -1,3 +1,32 @@
+// api/validate.js
+const rateLimit = new Map();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+export default function handler(req, res) {
+  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const now = Date.now();
+  
+  // Check rate limit
+  if (rateLimit.has(clientIP)) {
+    const attempts = rateLimit.get(clientIP);
+    if (attempts.count >= MAX_ATTEMPTS && now - attempts.firstAttempt < WINDOW_MS) {
+      return res.status(429).json({ 
+        error: 'Too many requests. Try again later.' 
+      });
+    }
+    
+    if (now - attempts.firstAttempt >= WINDOW_MS) {
+      // Reset window
+      rateLimit.set(clientIP, { count: 1, firstAttempt: now });
+    } else {
+      attempts.count++;
+    }
+  } else {
+    rateLimit.set(clientIP, { count: 1, firstAttempt: now });
+  }
+  
+  // Your validation logic here...
 export default function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
