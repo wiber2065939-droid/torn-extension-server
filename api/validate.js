@@ -7,10 +7,20 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 // Step 4: Discord webhook function (defined early so it can be used later)
 async function sendDiscordAlert(data) {
-  if (!process.env.DISCORD_WEBHOOK) return;
+  const webhookUrl = process.env.DISCORD_WEBHOOK;
+  
+  // Add this logging
+  console.log('Discord webhook URL present:', !!webhookUrl);
+  
+  if (!webhookUrl) {
+    console.log('No Discord webhook URL configured');
+    return;
+  }
   
   try {
-    await fetch(process.env.DISCORD_WEBHOOK, {
+    console.log('Attempting to send Discord alert:', data.title);
+    
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -27,6 +37,12 @@ async function sendDiscordAlert(data) {
         }]
       })
     });
+    
+    if (!response.ok) {
+      console.error('Discord webhook failed:', response.status, await response.text());
+    } else {
+      console.log('Discord alert sent successfully');
+    }
   } catch (error) {
     console.error('Failed to send Discord alert:', error);
   }
