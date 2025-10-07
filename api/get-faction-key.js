@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   const { sessionToken, factionId } = req.body;
 
-  // Verify session (you should validate the session token properly)
+  // Verify session exists
   if (!sessionToken) {
     return res.status(403).json({ error: 'No session token' });
   }
