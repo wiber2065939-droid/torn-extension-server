@@ -1,8 +1,0 @@
-{
-  "name": "torn-extension-server",
-  "version": "1.0.0",
-  "description": "Torn extension authentication and monitoring server",
-  "dependencies": {
-    "pg": "^8.11.3"
-  }
-}
