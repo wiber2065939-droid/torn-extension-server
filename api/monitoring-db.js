@@ -1,4 +1,4 @@
-const db = require('./database');
+import db from './database.js';
 
 class MonitoringDB {
     // Get configuration for a faction
@@ -9,7 +9,6 @@ class MonitoringDB {
         );
         
         if (result.rows.length === 0) {
-            // Return default config if none exists
             return {
                 factionId,
                 version: 1,
@@ -35,7 +34,6 @@ class MonitoringDB {
         };
     }
     
-    // Save configuration
     static async saveConfig(factionId, config, userId) {
         await db.query(
             `INSERT INTO faction_config 
@@ -63,7 +61,6 @@ class MonitoringDB {
         );
     }
     
-    // Get user's permission level
     static async getUserPermission(factionId, userId) {
         const result = await db.query(
             'SELECT permission_level FROM faction_permissions WHERE faction_id = $1 AND user_id = $2',
@@ -72,7 +69,6 @@ class MonitoringDB {
         return result.rows.length === 0 ? 'view' : result.rows[0].permission_level;
     }
     
-    // Get all permissions for a faction
     static async getFactionPermissions(factionId) {
         const result = await db.query(
             `SELECT user_id, permission_level, granted_at
@@ -84,7 +80,6 @@ class MonitoringDB {
         return result.rows;
     }
     
-    // Set user permission
     static async setUserPermission(factionId, userId, permissionLevel, grantedBy) {
         await db.query(
             `INSERT INTO faction_permissions (faction_id, user_id, permission_level, granted_by)
@@ -97,7 +92,6 @@ class MonitoringDB {
         );
     }
     
-    // Remove user permission
     static async removeUserPermission(factionId, userId) {
         await db.query(
             'DELETE FROM faction_permissions WHERE faction_id = $1 AND user_id = $2',
@@ -105,7 +99,6 @@ class MonitoringDB {
         );
     }
     
-    // Log alert
     static async logAlert(factionId, alertType, alertData, webhookUrl, success, errorMessage = null) {
         await db.query(
             `INSERT INTO alert_history (faction_id, alert_type, alert_data, webhook_url, success, error_message)
@@ -114,7 +107,6 @@ class MonitoringDB {
         );
     }
     
-    // Check if alert was recently sent
     static async wasRecentlySent(factionId, alertType, cooldownMinutes) {
         const result = await db.query(
             `SELECT COUNT(*) as count FROM alert_history
@@ -126,7 +118,6 @@ class MonitoringDB {
         return parseInt(result.rows[0].count) > 0;
     }
     
-    // Get monitoring state
     static async getMonitoringState(factionId) {
         const result = await db.query(
             'SELECT * FROM monitoring_state WHERE faction_id = $1',
@@ -152,13 +143,11 @@ class MonitoringDB {
         };
     }
     
-    // Update monitoring state
     static async updateMonitoringState(factionId, updates) {
         const fields = [];
         const values = [];
         let paramCount = 1;
         
-        // Build dynamic UPDATE query
         if (updates.lastCheck !== undefined) {
             fields.push(`last_check = $${paramCount++}`);
             values.push(updates.lastCheck);
@@ -193,17 +182,11 @@ class MonitoringDB {
         );
     }
     
-    // Get active factions (those with valid licenses)
     static async getActiveFactions() {
-        // TODO: Replace this with your actual query based on your license table structure
-        // This is a placeholder - you'll need to adjust based on your database schema
-        const result = await db.query(
-            `SELECT id, torn_faction_id, api_key
-             FROM factions
-             WHERE license_active = true AND license_expires > NOW()`
-        );
-        return result.rows;
+        // For now, return empty array - you'll need to create factions table later
+        // TODO: Replace with actual query once you have factions/licenses tables
+        return [];
     }
 }
 
-module.exports = MonitoringDB;
+export default MonitoringDB;
