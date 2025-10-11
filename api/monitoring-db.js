@@ -197,4 +197,13 @@ class MonitoringDB {
     static async getActiveFactions() {
         // TODO: Replace this with your actual query based on your license table structure
         // This is a placeholder - you'll need to adjust based on your database schema
-        const r
+        const result = await db.query(
+            `SELECT id, torn_faction_id, api_key
+             FROM factions
+             WHERE license_active = true AND license_expires > NOW()`
+        );
+        return result.rows;
+    }
+}
+
+module.exports = MonitoringDB;
