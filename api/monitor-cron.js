@@ -1,4 +1,5 @@
 import MonitoringService from './monitoring-service.js';
+import db from './database.js';
 
 export default async function handler(req, res) {
     console.log('Cron job triggered at:', new Date().toISOString());
@@ -15,10 +16,20 @@ export default async function handler(req, res) {
         console.log('Starting monitoring service...');
         await MonitoringService.monitorAll();
         console.log('Monitoring completed successfully');
+        
+        // Cleanup old claims (older than 1 hour)
+        console.log('Cleaning up old alert claims...');
+        const cleanupResult = await db.query(
+            `DELETE FROM alert_claims 
+             WHERE claimed_at < NOW() - INTERVAL '1 hour'`
+        );
+        console.log(`Deleted ${cleanupResult.rowCount} old claims`);
+        
         res.status(200).json({ 
             success: true, 
             timestamp: new Date().toISOString(),
-            message: 'Monitoring cycle completed'
+            message: 'Monitoring cycle completed',
+            cleanedClaims: cleanupResult.rowCount
         });
     } catch (error) {
         console.error('Cron job error:', error);
