@@ -20,10 +20,14 @@ export default async function handler(req, res) {
             message: 'Database connection successful!'
         });
     } catch (error) {
+        // Log the full error server-side (visible in Vercel logs only)
+        console.error('Database connection error:', error);
+        
+        // Return sanitized error to client (no sensitive info)
         return res.status(500).json({
             success: false,
-            error: error.message,
-            stack: error.stack
+            error: 'Database connection failed',
+            message: 'Check server logs for details'
         });
     }
 }
