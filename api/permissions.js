@@ -1,32 +1,24 @@
-const MonitoringDB = require('./monitoring-db');
+import MonitoringDB from './monitoring-db.js';
 
-// Helper function to check if user is faction leader
-// TODO: Replace this with your actual logic
 async function isLeader(userId, factionId) {
-    return false; // Placeholder - integrate with your auth system
+    return false; // TODO: Implement
 }
 
 export default async function handler(req, res) {
-    // Get session token from headers
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
         return res.status(401).json({ error: 'No token provided' });
     }
     
-    // TODO: Validate token using your existing auth system
-    // TEMPORARY placeholders:
-    const userId = 1;
+    const userId = 1; // TODO: Validate token
     const userFactionId = parseInt(req.query.factionId);
-    
     const factionId = parseInt(req.query.factionId);
     
-    // Verify user belongs to this faction
     if (userFactionId !== factionId) {
         return res.status(403).json({ error: 'Access denied' });
     }
     
     try {
-        // GET - Get all permissions
         if (req.method === 'GET') {
             const permissions = await MonitoringDB.getFactionPermissions(factionId);
             const leader = await isLeader(userId, factionId);
@@ -37,11 +29,10 @@ export default async function handler(req, res) {
             });
         }
         
-        // PUT - Update permission
         if (req.method === 'PUT') {
             const { targetUserId, permissionLevel } = req.body;
-            
             const leader = await isLeader(userId, factionId);
+            
             if (!leader) {
                 return res.status(403).json({ error: 'Only leaders can manage permissions' });
             }
@@ -54,11 +45,10 @@ export default async function handler(req, res) {
             return res.status(200).json({ success: true });
         }
         
-        // DELETE - Remove permission
         if (req.method === 'DELETE') {
             const { targetUserId } = req.query;
-            
             const leader = await isLeader(userId, factionId);
+            
             if (!leader) {
                 return res.status(403).json({ error: 'Only leaders can manage permissions' });
             }
