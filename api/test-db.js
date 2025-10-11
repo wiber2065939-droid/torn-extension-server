@@ -1,4 +1,4 @@
-const db = require('./database');
+import db from './database.js';
 
 export default async function handler(req, res) {
     try {
