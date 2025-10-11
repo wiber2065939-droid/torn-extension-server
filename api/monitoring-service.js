@@ -1,7 +1,6 @@
-const MonitoringDB = require('./monitoring-db');
+import MonitoringDB from './monitoring-db.js';
 
 class MonitoringService {
-    // Send a Discord webhook
     static async sendDiscordWebhook(url, data) {
         const response = await fetch(url, {
             method: 'POST',
@@ -14,7 +13,6 @@ class MonitoringService {
         }
     }
     
-    // Fetch faction data from Torn API
     static async fetchFactionData(factionId, apiKey) {
         try {
             const response = await fetch(
@@ -29,7 +27,6 @@ class MonitoringService {
         }
     }
     
-    // Check if currently in quiet hours
     static isQuietHours(quietHours) {
         if (!quietHours || !quietHours.enabled) return false;
         
@@ -50,9 +47,7 @@ class MonitoringService {
         }
     }
     
-    // Send an alert if conditions are met
     static async sendAlert(factionId, alertType, embedData, config) {
-        // Find webhook for this alert type
         let webhook = config.webhooks.find(w => w.type === alertType);
         if (!webhook) {
             webhook = config.webhooks.find(w => w.type === 'general');
@@ -72,29 +67,24 @@ class MonitoringService {
         }
     }
     
-    // Monitor a single faction
     static async monitorFaction(faction) {
         try {
             const config = await MonitoringDB.getConfig(faction.id);
             const state = await MonitoringDB.getMonitoringState(faction.id);
             
-            // Skip if no alerts enabled
             if (!Object.values(config.enabledAlerts).some(v => v)) {
                 console.log(`No alerts enabled for faction ${faction.id}`);
                 return;
             }
             
-            // Skip if quiet hours
             if (this.isQuietHours(config.quietHours)) {
                 console.log(`Quiet hours active for faction ${faction.id}`);
                 return;
             }
             
-            // Fetch faction data
             const data = await this.fetchFactionData(faction.torn_faction_id, faction.api_key);
             
             if (!data) {
-                // Handle API error
                 await MonitoringDB.updateMonitoringState(faction.id, {
                     lastCheck: new Date(),
                     checkFailures: (state.checkFailures || 0) + 1,
@@ -103,13 +93,11 @@ class MonitoringService {
                 return;
             }
             
-            // Reset failures on success
             await MonitoringDB.updateMonitoringState(faction.id, {
                 lastCheck: new Date(),
                 checkFailures: 0
             });
             
-            // Check OC alerts
             if (config.enabledAlerts.oc && data.crimes) {
                 const readyCrimes = data.crimes.filter(c => c.ready === 1).length;
                 if (readyCrimes >= config.thresholds.oc_crimes) {
@@ -128,7 +116,6 @@ class MonitoringService {
                 }
             }
             
-            // Check chain alerts
             if (config.enabledAlerts.chain && data.chain) {
                 const chainCount = data.chain.current || 0;
                 
@@ -147,7 +134,6 @@ class MonitoringService {
                     }
                 }
                 
-                // Update chain count
                 await MonitoringDB.updateMonitoringState(faction.id, {
                     currentChainCount: chainCount
                 });
@@ -160,19 +146,16 @@ class MonitoringService {
         }
     }
     
-    // Main monitoring loop
     static async monitorAll() {
         console.log('Starting monitoring cycle...');
         
         const factions = await MonitoringDB.getActiveFactions();
         console.log(`Monitoring ${factions.length} factions`);
         
-        // Process in batches of 5
         for (let i = 0; i < factions.length; i += 5) {
             const batch = factions.slice(i, i + 5);
             await Promise.all(batch.map(f => this.monitorFaction(f)));
             
-            // Small delay between batches
             if (i + 5 < factions.length) {
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
@@ -182,4 +165,4 @@ class MonitoringService {
     }
 }
 
-module.exports = MonitoringService;
+export default MonitoringService;
