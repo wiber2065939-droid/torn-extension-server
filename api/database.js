@@ -1,4 +1,5 @@
-const { Pool } = require('pg');
+import pg from 'pg';
+const { Pool } = pg;
 
 // Create a connection pool using the DATABASE_URL environment variable
 const pool = new Pool({
@@ -22,7 +23,4 @@ async function query(text, params) {
   }
 }
 
-module.exports = {
-  query,
-  pool
-};
+export default { query, pool };
