@@ -7,6 +7,8 @@ export default async function handler(req, res) {
     
     const { factionId, alertType, clientId, cooldownMinutes = 60 } = req.body;
     
+    console.log(`📋 Claim received: ${alertType}, cooldown: ${cooldownMinutes} minutes`);
+    
     if (!factionId || !alertType || !clientId) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
