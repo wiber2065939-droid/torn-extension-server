@@ -15,11 +15,11 @@ export default async function handler(req, res) {
         // NOTE: Monitoring service disabled (premium feature - no active factions)
         console.log('Skipping monitoring (no active factions)');
         
-        // Cleanup old claims (older than 1 hour)
+        // Cleanup old claims (older than 48 hours - well past max cooldown of 24h)
         console.log('Cleaning up old alert claims...');
         const cleanupResult = await db.query(
             `DELETE FROM alert_claims 
-             WHERE claimed_at < NOW() - INTERVAL '1 hour'`
+             WHERE claimed_at < NOW() - INTERVAL '48 hours'`
         );
         console.log(`Deleted ${cleanupResult.rowCount} old claims`);
         
