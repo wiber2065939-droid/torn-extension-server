@@ -14,16 +14,22 @@ export default async function handler(req, res) {
     }
     
     try {
+        // Calculate cooldown threshold in JavaScript
+        const cooldownMs = cooldownMinutes * 60 * 1000;
+        const cooldownThreshold = new Date(Date.now() - cooldownMs);
+        
+        console.log(`📋 Checking cooldown: ${alertType}, threshold: ${cooldownMinutes} min, time: ${cooldownThreshold}`);
+        
         // Check if alert was recently sent (respecting cooldown)
         const recentAlert = await db.query(
             `SELECT * FROM alert_claims
              WHERE faction_id = $1 
              AND alert_type = $2
              AND webhook_sent = TRUE
-             AND claimed_at > NOW() - INTERVAL '1 minute' * $3
+             AND claimed_at > $3
              ORDER BY claimed_at DESC
              LIMIT 1`,
-            [factionId, alertType, cooldownMinutes]
+            [factionId, alertType, cooldownThreshold]
         );
         
         if (recentAlert.rows.length > 0) {
