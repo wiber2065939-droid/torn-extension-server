@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     }
     
     try {
-        // Calculate cooldown threshold in JavaScript
+        // Calculate cooldown threshold in JavaScript.
         const cooldownMs = cooldownMinutes * 60 * 1000;
         const cooldownThreshold = new Date(Date.now() - cooldownMs);
         const cooldownExpiry = new Date(Date.now() + cooldownMs); // When current cooldown expires
