@@ -17,8 +17,9 @@ export default async function handler(req, res) {
         // Calculate cooldown threshold in JavaScript
         const cooldownMs = cooldownMinutes * 60 * 1000;
         const cooldownThreshold = new Date(Date.now() - cooldownMs);
+        const cooldownExpiry = new Date(Date.now() + cooldownMs); // When current cooldown expires
         
-        console.log(`📋 Checking cooldown: ${alertType}, threshold: ${cooldownMinutes} min, time: ${cooldownThreshold}`);
+        console.log(`📋 Checking cooldown: ${alertType}, threshold: ${cooldownMinutes} min, cutoff: ${cooldownThreshold.toISOString()}`);
         
         // Check if alert was recently sent (respecting cooldown)
         const recentAlert = await db.query(
@@ -33,13 +34,23 @@ export default async function handler(req, res) {
         );
         
         if (recentAlert.rows.length > 0) {
+            const lastSent = new Date(recentAlert.rows[0].claimed_at);
+            const expiresAt = new Date(lastSent.getTime() + cooldownMs);
+            const timeRemaining = Math.round((expiresAt - Date.now()) / 60000); // minutes remaining
+            
+            console.log(`⏸️ COOLDOWN ACTIVE: ${alertType} - Last sent: ${lastSent.toISOString()}, Expires: ${expiresAt.toISOString()}, Time remaining: ${timeRemaining} minutes`);
+            
             return res.json({
                 claimAccepted: false,
                 reason: 'cooldown',
                 message: 'Alert was recently sent',
-                lastSent: recentAlert.rows[0].claimed_at
+                lastSent: lastSent.toISOString(),
+                cooldownExpires: expiresAt.toISOString(),
+                minutesRemaining: timeRemaining
             });
         }
+        
+        console.log(`✅ No recent alert found - claim accepted`);
         
         // Check if there's already an active claim window for this alert
         const activeClaim = await db.query(
